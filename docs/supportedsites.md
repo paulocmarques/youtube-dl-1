@@ -35,6 +35,8 @@
  - **adobetv:video**
  - **AdultSwim**
  - **aenetworks**: A+E Networks: A&E, Lifetime, History.com, FYI Network and History Vault
+ - **aenetworks:collection**
+ - **aenetworks:show**
  - **afreecatv**: afreecatv.com
  - **AirMozilla**
  - **AliExpressLive**
@@ -422,7 +424,8 @@
  - **la7.it**
  - **laola1tv**
  - **laola1tv:embed**
- - **lbry.tv**
+ - **lbry**
+ - **lbry:channel**
  - **LCI**
  - **Lcp**
  - **LcpPlay**
@@ -898,6 +901,7 @@
  - **TeleQuebecEmission**
  - **TeleQuebecLive**
  - **TeleQuebecSquat**
+ - **TeleQuebecVideo**
  - **TeleTask**
  - **Telewebion**
  - **TennisTV**
@@ -1164,6 +1168,7 @@
  - **youtube:subscriptions**: YouTube.com subscriptions feed, "ytsubs" keyword (requires authentication)
  - **youtube:tab**: YouTube.com tab
  - **youtube:watchlater**: Youtube watch later list, ":ytwatchlater" for short (requires authentication)
+ - **YoutubeYtBe**
  - **YoutubeYtUser**
  - **Zapiks**
  - **Zaq1**
