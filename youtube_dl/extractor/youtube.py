@@ -398,7 +398,8 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                      (?(1).+)?                                                # if we found the ID, everything can follow
                      $""" % {'playlist_id': YoutubeBaseInfoExtractor._PLAYLIST_ID_RE}
     _PLAYER_INFO_RE = (
-        r'/(?P<id>[a-zA-Z0-9_-]{8,})/player_ias\.vflset(?:/[a-zA-Z]{2,3}_[a-zA-Z]{2,3})?/base\.js$',
+        r'/s/player/(?P<id>[a-zA-Z0-9_-]{8,})/player',
+        r'/(?P<id>[a-zA-Z0-9_-]{8,})/player(?:_ias\.vflset(?:/[a-zA-Z]{2,3}_[a-zA-Z]{2,3})?|-plasma-ias-(?:phone|tablet)-[a-z]{2}_[A-Z]{2}\.vflset)/base\.js$',
         r'\b(?P<id>vfl[a-zA-Z0-9_-]+)\b.*?\.js$',
     )
     _SUBTITLE_FORMATS = ('srv1', 'srv2', 'srv3', 'ttml', 'vtt')
@@ -500,6 +501,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 'uploader': 'AfrojackVEVO',
                 'uploader_id': 'AfrojackVEVO',
                 'upload_date': '20131011',
+                'abr': 129.495,
             },
             'params': {
                 'youtube_include_dash_manifest': True,
@@ -1018,6 +1020,28 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             'url': 'https://www.youtube.com/watch_popup?v=63RmMXCd_bQ',
             'only_matching': True,
         },
+        {
+            # https://github.com/ytdl-org/youtube-dl/pull/28094
+            'url': 'OtqTfy26tG0',
+            'info_dict': {
+                'id': 'OtqTfy26tG0',
+                'ext': 'mp4',
+                'title': 'Burn Out',
+                'description': 'md5:8d07b84dcbcbfb34bc12a56d968b6131',
+                'upload_date': '20141120',
+                'uploader': 'The Cinematic Orchestra - Topic',
+                'uploader_id': 'UCIzsJBIyo8hhpFm1NK0uLgw',
+                'uploader_url': r're:https?://(?:www\.)?youtube\.com/channel/UCIzsJBIyo8hhpFm1NK0uLgw',
+                'artist': 'The Cinematic Orchestra',
+                'track': 'Burn Out',
+                'album': 'Every Day',
+                'release_data': None,
+                'release_year': None,
+            },
+            'params': {
+                'skip_download': True,
+            },
+        },
     ]
     _formats = {
         '5': {'ext': 'flv', 'width': 400, 'height': 240, 'acodec': 'mp3', 'abr': 64, 'vcodec': 'h263'},
@@ -1214,6 +1238,9 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         funcname = self._search_regex(
             (r'\b[cs]\s*&&\s*[adf]\.set\([^,]+\s*,\s*encodeURIComponent\s*\(\s*(?P<sig>[a-zA-Z0-9$]+)\(',
              r'\b[a-zA-Z0-9]+\s*&&\s*[a-zA-Z0-9]+\.set\([^,]+\s*,\s*encodeURIComponent\s*\(\s*(?P<sig>[a-zA-Z0-9$]+)\(',
+             r'\bm=(?P<sig>[a-zA-Z0-9$]{2})\(decodeURIComponent\(h\.s\)\)',
+             r'\bc&&\(c=(?P<sig>[a-zA-Z0-9$]{2})\(decodeURIComponent\(c\)\)',
+             r'(?:\b|[^a-zA-Z0-9$])(?P<sig>[a-zA-Z0-9$]{2})\s*=\s*function\(\s*a\s*\)\s*{\s*a\s*=\s*a\.split\(\s*""\s*\);[a-zA-Z0-9$]{2}\.[a-zA-Z0-9$]{2}\(a,\d+\)',
              r'(?:\b|[^a-zA-Z0-9$])(?P<sig>[a-zA-Z0-9$]{2})\s*=\s*function\(\s*a\s*\)\s*{\s*a\s*=\s*a\.split\(\s*""\s*\)',
              r'(?P<sig>[a-zA-Z0-9$]+)\s*=\s*function\(\s*a\s*\)\s*{\s*a\s*=\s*a\.split\(\s*""\s*\)',
              # Obsolete patterns
@@ -1477,6 +1504,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
 
         formats = []
         itags = []
+        itag_qualities = {}
         player_url = None
         q = qualities(['tiny', 'small', 'medium', 'large', 'hd720', 'hd1080', 'hd1440', 'hd2160', 'hd2880', 'highres'])
         streaming_data = player_response.get('streamingData') or {}
@@ -1484,6 +1512,16 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         streaming_formats.extend(streaming_data.get('adaptiveFormats') or [])
         for fmt in streaming_formats:
             if fmt.get('targetDurationSec') or fmt.get('drmFamilies'):
+                continue
+
+            itag = str_or_none(fmt.get('itag'))
+            quality = fmt.get('quality')
+            if itag and quality:
+                itag_qualities[itag] = quality
+            # FORMAT_STREAM_TYPE_OTF(otf=1) requires downloading the init fragment
+            # (adding `&sq=0` to the URL) and parsing emsg box to determine the
+            # number of fragment that would subsequently requested with (`&sq=N`)
+            if fmt.get('type') == 'FORMAT_STREAM_TYPE_OTF':
                 continue
 
             fmt_url = fmt.get('url')
@@ -1505,10 +1543,10 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 sp = try_get(sc, lambda x: x['sp'][0]) or 'signature'
                 fmt_url += '&' + sp + '=' + signature
 
-            itag = str_or_none(fmt.get('itag'))
             if itag:
                 itags.append(itag)
-            quality = fmt.get('quality')
+            tbr = float_or_none(
+                fmt.get('averageBitrate') or fmt.get('bitrate'), 1000)
             dct = {
                 'asr': int_or_none(fmt.get('audioSampleRate')),
                 'filesize': int_or_none(fmt.get('contentLength')),
@@ -1517,8 +1555,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 'fps': int_or_none(fmt.get('fps')),
                 'height': int_or_none(fmt.get('height')),
                 'quality': q(quality),
-                'tbr': float_or_none(fmt.get(
-                    'averageBitrate') or fmt.get('bitrate'), 1000),
+                'tbr': tbr,
                 'url': fmt_url,
                 'width': fmt.get('width'),
             }
@@ -1529,7 +1566,13 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 if mobj:
                     dct['ext'] = mimetype2ext(mobj.group(1))
                     dct.update(parse_codecs(mobj.group(2)))
-            if dct.get('acodec') == 'none' or dct.get('vcodec') == 'none':
+            no_audio = dct.get('acodec') == 'none'
+            no_video = dct.get('vcodec') == 'none'
+            if no_audio:
+                dct['vbr'] = tbr
+            if no_video:
+                dct['abr'] = tbr
+            if no_audio or no_video:
                 dct['downloader_options'] = {
                     # Youtube throttles chunks >~10M
                     'http_chunk_size': 10485760,
@@ -1551,8 +1594,11 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             if dash_manifest_url:
                 for f in self._extract_mpd_formats(
                         dash_manifest_url, video_id, fatal=False):
-                    if f['format_id'] in itags:
+                    itag = f['format_id']
+                    if itag in itags:
                         continue
+                    if itag in itag_qualities:
+                        f['quality'] = q(itag_qualities[itag])
                     filesize = int_or_none(self._search_regex(
                         r'/clen/(\d+)', f.get('fragment_base_url')
                         or f['url'], 'file size', default=None))
@@ -1723,7 +1769,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                     'artist': mobj.group('clean_artist') or ', '.join(a.strip() for a in mobj.group('artist').split('·')),
                     'track': mobj.group('track').strip(),
                     'release_date': release_date,
-                    'release_year': int(release_year),
+                    'release_year': int_or_none(release_year),
                 })
 
         initial_data = None
@@ -2328,9 +2374,9 @@ class YoutubeTabIE(YoutubeBaseInfoExtractor):
         next_continuation = cls._extract_next_continuation_data(renderer)
         if next_continuation:
             return next_continuation
-        contents = renderer.get('contents')
-        if not isinstance(contents, list):
-            return
+        contents = []
+        for key in ('contents', 'items'):
+            contents.extend(try_get(renderer, lambda x: x[key], list) or [])
         for content in contents:
             if not isinstance(content, dict):
                 continue
@@ -2462,6 +2508,13 @@ class YoutubeTabIE(YoutubeBaseInfoExtractor):
             if continuation_items:
                 continuation_item = continuation_items[0]
                 if not isinstance(continuation_item, dict):
+                    continue
+                renderer = continuation_item.get('gridVideoRenderer')
+                if renderer:
+                    grid_renderer = {'items': continuation_items}
+                    for entry in self._grid_entries(grid_renderer):
+                        yield entry
+                    continuation = self._extract_continuation(grid_renderer)
                     continue
                 renderer = continuation_item.get('playlistVideoRenderer') or continuation_item.get('itemSectionRenderer')
                 if renderer:
