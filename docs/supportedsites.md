@@ -82,6 +82,7 @@
  - **awaan:video**
  - **AZMedien**: AZ Medien videos
  - **BaiduVideo**: 百度视频
+ - **bandaichannel**
  - **Bandcamp**
  - **Bandcamp:album**
  - **Bandcamp:weekly**
@@ -212,6 +213,7 @@
  - **curiositystream**
  - **curiositystream:collection**
  - **CWTV**
+ - **DagelijkseKost**: dagelijksekost.een.be
  - **DailyMail**
  - **dailymotion**
  - **dailymotion:playlist**
@@ -233,6 +235,7 @@
  - **DiscoveryGo**
  - **DiscoveryGoPlaylist**
  - **DiscoveryNetworksDe**
+ - **DiscoveryPlus**
  - **DiscoveryVR**
  - **Disney**
  - **dlive:stream**
@@ -328,6 +331,7 @@
  - **Gaskrank**
  - **Gazeta**
  - **GDCVault**
+ - **GediDigital**
  - **generic**: Generic downloader that works on some sites
  - **Gfycat**
  - **GiantBomb**
@@ -353,6 +357,7 @@
  - **HentaiStigma**
  - **hetklokhuis**
  - **hgtv.com:show**
+ - **HGTVDe**
  - **HiDive**
  - **HistoricFilms**
  - **history:player**
@@ -803,6 +808,7 @@
  - **safari:course**: safaribooksonline.com online courses
  - **SAKTV**
  - **SaltTV**
+ - **SampleFocus**
  - **Sapo**: SAPO Vídeos
  - **savefrom.net**
  - **SBS**: sbs.com.au
@@ -825,6 +831,9 @@
  - **ShahidShow**
  - **Shared**: shared.sx
  - **ShowRoomLive**
+ - **simplecast**
+ - **simplecast:episode**
+ - **simplecast:podcast**
  - **Sina**
  - **sky.it**
  - **sky:news**
@@ -877,6 +886,9 @@
  - **Steam**
  - **Stitcher**
  - **StitcherShow**
+ - **StoryFire**
+ - **StoryFireSeries**
+ - **StoryFireUser**
  - **Streamable**
  - **streamcloud.eu**
  - **StreamCZ**
@@ -1198,5 +1210,6 @@
  - **ZattooLive**
  - **ZDF**
  - **ZDFChannel**
+ - **Zhihu**
  - **zingmp3**: mp3.zing.vn
  - **Zype**
